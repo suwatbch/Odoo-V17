@@ -1,31 +1,42 @@
-version: '3.1'
+version: '3.8'
 
 services:
-  web:
-    image: odoo:17
-    depends_on:
-      - db
-    ports:
-      - "8000:8069"
-    volumes:
-      - ./addons:/mnt/extra-addons
-      - ./odoo.conf:/etc/odoo/odoo.conf
-    environment:
-      - HOST=db
-      - USER=Bicadmin
-      - PASSWORD=Bicadmin231
-
   db:
     image: postgres:13
+    container_name: odoo_db
+    restart: always
     ports:
-      - "5433:5432"
+      - '5433:5432'
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=Bicadmin
-      - POSTGRES_PASSWORD=Bicadmin231
+      - POSTGRES_PASSWORD=Bic@231
     volumes:
       - odoo-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    image: odoo:17
+    container_name: odoo_web
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - '8000:8069'
+    volumes:
+      - ./addons:/mnt/extra-addons
+      - ./odoo.conf:/etc/odoo/odoo.conf:ro
+      - odoo-web-data:/var/lib/odoo
+    environment:
+      - HOST=db
+      - USER=Bicadmin
+      - PASSWORD=Bic@231
 
 volumes:
   odoo-db-data:
-
+  odoo-web-data:
